@@ -1,0 +1,45 @@
+{
+  "name": "paperly-research-canvas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "server": "node server/index.mjs",
+    "start": "node server/index.mjs",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "vitest run && node --test server/backend.integration.mjs server/assets.integration.mjs server/office.integration.mjs server/ai.integration.mjs server/ai-network.integration.mjs server/codex.integration.mjs"
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.9.0",
+    "cfb": "^1.2.2",
+    "dompurify": "^3.2.7",
+    "idb-keyval": "^6.2.2",
+    "jose": "^6.2.12",
+    "katex": "^0.19.0",
+    "lucide-react": "^0.468.0",
+    "open": "^11.0.4",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^5.4.296",
+    "perfect-freehand": "^1.2.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-markdown": "^10.1.0",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "sharp": "^0.35.5",
+    "superdoc": "^2.23.0",
+    "undici": "^7.30.1",
+    "yauzl": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,89 @@
+/* Focus controls stay reachable while the workspace chrome is hidden. */
+.focus-mode-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  height: 32px; padding: 0 10px; flex-shrink: 0; white-space: nowrap;
+  border: 1px solid #d8e5ee; border-radius: 7px; background: #fff;
+  color: #52778c; font-size: 12px; box-shadow: 0 2px 8px #17354d08;
+}
+.focus-mode-button:hover { color: #187e8b; background: #edf7f9; border-color: #adcfd8; }
+.focus-mode-button.is-focused { color: #187e8b; background: #edf7f9; border-color: #c8e0e7; }
+.focus-mode-button:focus-visible { outline: 2px solid #3294a3; outline-offset: 3px; }
+.modal-heading:has(> .focus-mode-button) > h2 { flex: 1; min-width: 0; }
+
+/* Notes expand in place so ink, undo history and the current viewport survive. */
+.ink-editor { outline: none; }
+.ink-focus-control { position: absolute; top: 16px; right: 18px; z-index: 7; }
+.ink-editor .focus-mode-button {
+  background: var(--ink-ui); border-color: var(--ink-ui-border); color: var(--ink-label);
+  box-shadow: 0 3px 14px var(--ink-shadow);
+}
+.ink-editor .focus-mode-button:hover, .ink-editor .focus-mode-button.is-focused {
+  background: var(--ink-accent-bg); color: var(--ink-accent);
+}
+.ink-focused > .ink-editor-header,
+.ink-focused > .ink-anchor-bar,
+.ink-focused > .ink-editor-status,
+.ink-focused .ink-first-mark { display: none; }
+.app-shell:has(.main-content .ink-focused) { grid-template-columns: minmax(0,1fr); }
+.app-shell:has(.main-content .ink-focused) > .sidebar,
+.app-shell:has(.main-content .ink-focused) > .main-content > .topbar,
+.app-shell:has(.main-content .ink-focused) > .main-content > .board-header,
+.app-shell:has(.main-content .ink-focused) > .main-content > .board-tabs-row,
+.app-shell:has(.main-content .ink-focused) > .main-content > .app-statusbar { display: none; }
+.canvas-and-inspector:has(> .ink-split-pane .ink-focused) > .canvas-container { display: none; }
+.canvas-and-inspector > .ink-split-pane:has(.ink-focused) {
+  width: 100%; max-width: none; min-width: 0; min-height: 0; height: auto; border: 0; flex: 1; box-shadow: none;
+}
+
+/* Both PDF readers use the whole window without remounting the document. */
+.modal.reader-focused,
+.modal.paper-reader-modal:has(.ink-focused) {
+  position: fixed; inset: 0; width: 100%; max-width: none;
+  height: 100dvh; max-height: none; border: 0; border-radius: 0;
+}
+.modal.reader-focused > .modal-heading {
+  position: absolute; top: 16px; left: 18px; z-index: 12;
+  min-height: 0; padding: 0; border: 0; background: transparent;
+}
+.modal.reader-focused > .modal-heading > h2,
+.modal.reader-focused > .modal-heading > .icon-button,
+.reader-focused .reader-toolbar,
+.reader-focused .paper-reader-toolbar,
+.reader-focused .paper-link-toolbar,
+.reader-focused .pdf-navigation,
+.reader-focused .pdf-page-status,
+.reader-focused .ink-editor-header,
+.reader-focused .ink-anchor-bar,
+.reader-focused .ink-editor-status,
+.reader-focused .ink-first-mark { display: none; }
+.reader-focus-save {
+  position: absolute; left: 140px; top: 16px; z-index: 12;
+  display: flex; align-items: center; gap: 10px;
+  padding-left: 8px; color: #607b8c; font-size: 11px;
+}
+.reader-focus-save > span {
+  background: #fffffff2; padding: 7px 9px; border: 1px solid #dbe6ed; border-radius: 6px;
+}
+.reader-focus-save > .secondary-button { background: #fff; min-height: 32px; font-size: 11px; }
+.reader-focus-save > .unsaved { color: #916b24; }
+.reader-focused .pdf-document-stack { padding-top: 66px; }
+.reader-focused .sample-paper { margin-top: 66px; }
+.paper-reader-modal:has(.ink-focused) > .modal-heading,
+.paper-reader-modal:has(.ink-focused) .reader-focus-save,
+.paper-reader-modal:has(.ink-focused) .paper-reader-toolbar,
+.paper-reader-modal:has(.ink-focused) .paper-link-toolbar,
+.paper-reader-modal:has(.ink-focused) .pdf-message,
+.paper-reader-modal:has(.ink-focused) .paper-pdf-pane { display: none; }
+.paper-reader-panes:has(.ink-focused) { flex-direction: row; }
+.paper-reader-panes > .paper-note-pane:has(.ink-focused) {
+  width: 100%; max-width: none; min-width: 0; min-height: 0; height: auto;
+  flex: 1; border: 0;
+}
+
+@media (max-width: 760px) {
+  .focus-mode-button { font-size: 11px; padding: 0 8px; }
+  .ink-focus-control { top: 12px; right: 12px; }
+  .modal.reader-focused > .modal-heading { top: 12px; left: 12px; }
+  .reader-focus-save { left: 127px; top: 12px; gap: 6px; padding-left: 0; }
+  .reader-focus-save > span { display: none; }
+}

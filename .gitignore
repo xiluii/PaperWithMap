@@ -1,0 +1,36 @@
+# Dependencies and generated builds
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Local papers, notes, screenshots and verification output
+data/
+artifacts/
+test-results/
+coverage/
+
+# Environment variables and local configuration
+.env
+.env.*
+!.env.example
+*.local
+*.log
+
+# Credentials and private local state, including custom locations
+.codex/
+ai-auth/
+ai-codex/
+conversations/
+.npmrc
+.netrc
+.git-credentials
+auth.json
+accounts.json
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Operating system files
+.DS_Store
+Thumbs.db

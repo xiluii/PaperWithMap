@@ -1,0 +1,17 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { ReactFlowProvider } from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import App from './App';
+import { AiProvider } from './AiProvider';
+import { ThemeProvider } from './ThemeProvider';
+import './styles.css';
+import './handwriting.css';
+import './cards.css';
+import './theme.css';
+import './workbench.css';
+import './focus.css';
+import './ai.css';
+import './dark.css';
+
+ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><ThemeProvider><ReactFlowProvider><AiProvider><App /></AiProvider></ReactFlowProvider></ThemeProvider></React.StrictMode>);

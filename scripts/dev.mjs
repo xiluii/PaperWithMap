@@ -1,0 +1,10 @@
+import { spawn } from 'node:child_process';
+import { createLocalServer } from '../server/index.mjs';
+const { server, store } = await createLocalServer();
+server.listen(4317, '127.0.0.1');
+server.on('error', error => { console.error(error.message); process.exit(1); });
+console.log('Local data: ' + store.directory);
+const vite = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1'], { stdio: 'inherit', windowsHide: true });
+const stop = () => { vite.kill(); server.close(); };
+process.on('SIGINT', stop); process.on('SIGTERM', stop);
+vite.on('exit', code => { server.close(); process.exitCode = code || 0; });
