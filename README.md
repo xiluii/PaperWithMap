@@ -48,6 +48,8 @@ Paperly 是面向桌面研究场景的本地文献工作台。把论文放上无
 
 PDF 全文连续排列，按视野绘制附近页面，可直接滚动到文章末尾。钢笔、荧光笔、压感、橡皮与撤销重做支持边读边写；保存后，矢量墨迹嵌入平台管理的 PDF 副本，外部阅读器也能看到。
 
+阅读工具栏可开启「划词翻译」，选中单词或短语即弹出有道词典音标与释义。默认关闭，关闭后不查询；无需 GPT 或 AI 额度，支持 PDF、PPT 文字预览与 Word 正文选区。开启时仅将选中的文字联网发送至有道词典。
+
 右侧空白笔记创建后即关联当前文件，也可调用已有笔记。独立笔记库支持检索、重命名、回收站和 PNG 导出，并提供纯白、纯黑与黑板绿三种书写背景。
 
 ### 多种文件，共享同一套关联方式
@@ -174,7 +176,7 @@ data/
 - [暗色模式验收](docs/dark-mode-acceptance.md) · [工作台设计规范](docs/design-system.md)。
 - [源码发布与隐私](docs/publication.md) · [第三方组件声明](THIRD_PARTY_NOTICES.md)。
 
-当前验收记录：**76 项测试通过**，包含文件持久化、PDF 墨迹、DOCX 修订、真实 Office 转换和 AI 流式协议；TypeScript 与 Vite 构建通过。复验命令为 `npm test` 与 `npm run build`。缺少本地转换器时，Office 用例会明确跳过。
+当前验收记录：**84 项测试通过**，包含文件持久化、PDF 墨迹、DOCX 修订、真实 Office 转换和 AI 流式协议；TypeScript 与 Vite 构建通过。复验命令为 `npm test` 与 `npm run build`；划词翻译的接口边界与实机验证见[验收记录](docs/reading-translation-acceptance.md)。缺少本地转换器时，Office 用例会明确跳过。
 
 ## 当前阶段
 

@@ -7,6 +7,7 @@ import { ApiError, LocalStore } from './storage.mjs';
 import { officeCapabilities } from './office-converter.mjs';
 import { FILE_TYPES } from './file-types.mjs';
 import { AiService } from './ai-service.mjs';
+import { DictionaryService } from './dictionary-service.mjs';
 
 const projectDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const json = (res, status, value) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(value)); };
@@ -32,9 +33,10 @@ async function sendFile(req, res, file, type = 'application/pdf', name) {
   if (req.method === 'HEAD') return res.end();
   createReadStream(file, { start, end }).on('error', () => res.destroy()).pipe(res);
 }
-export async function createLocalServer({ directory = process.env.PAPERLY_DATA_DIR || path.join(projectDir, 'data'), openFile = target => open(target), aiOptions = {} } = {}) {
+export async function createLocalServer({ directory = process.env.PAPERLY_DATA_DIR || path.join(projectDir, 'data'), openFile = target => open(target), aiOptions = {}, dictionaryOptions = {} } = {}) {
   const store = new LocalStore(directory); await store.init();
   const ai = new AiService(store, { openBrowser: openFile, ...aiOptions }); await ai.init();
+  const dictionary = new DictionaryService(dictionaryOptions);
   const server = http.createServer(async (req, res) => {
     try {
       const host = req.headers.host || '';
@@ -42,6 +44,16 @@ export async function createLocalServer({ directory = process.env.PAPERLY_DATA_D
       const origin = req.headers.origin;
       if (origin && !/^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(?::\d+)?$/.test(origin)) throw new ApiError(403, '不允许来自外部网页的请求');
       const url = new URL(req.url, 'http://' + host), p = url.pathname, method = req.method;
+      if (p === '/api/dictionary/lookup' && method === 'POST') {
+        if (!req.headers['content-type']?.startsWith('application/json')) throw new ApiError(415, '请使用 JSON 请求');
+        let input;
+        try { input = JSON.parse((await body(req, 2048)).toString()); } catch (error) { if (error instanceof ApiError) throw error; throw new ApiError(400, 'JSON 格式无效'); }
+        const controller = new AbortController(), cancel = () => controller.abort();
+        res.once('close', cancel);
+        try { const result = await dictionary.lookup(input?.text, { signal: controller.signal }); if (!res.destroyed) json(res, 200, result); }
+        finally { res.off('close', cancel); }
+        return;
+      }
       if (await ai.handle(req, res, url, jsonBody, json)) return;
       if (p === '/api/health' && method === 'GET') {const office=await officeCapabilities();return json(res, 200, { ok: true, dataDirectory: store.directory,capabilities:{wordEditor:true,legacyWord:office.word,presentationPreview:office.presentation,conversionEngine:office.engine} });}
       if (p === '/api/workspace' && method === 'GET') return json(res, 200, await store.workspace());

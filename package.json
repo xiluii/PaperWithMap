@@ -9,7 +9,7 @@
     "start": "node server/index.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "vitest run && node --test server/backend.integration.mjs server/assets.integration.mjs server/office.integration.mjs server/ai.integration.mjs server/ai-network.integration.mjs server/codex.integration.mjs"
+    "test": "vitest run && node --test server/backend.integration.mjs server/assets.integration.mjs server/office.integration.mjs server/ai.integration.mjs server/ai-network.integration.mjs server/codex.integration.mjs server/dictionary.integration.mjs"
   },
   "dependencies": {
     "@xyflow/react": "^12.9.0",

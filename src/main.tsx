@@ -14,5 +14,6 @@ import './focus.css';
 import './ai.css';
 import './dark.css';
 import './chat-design.css';
+import './reading-translation.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><ThemeProvider><ReactFlowProvider><AiProvider><App /></AiProvider></ReactFlowProvider></ThemeProvider></React.StrictMode>);

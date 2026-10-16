@@ -7,14 +7,14 @@ import useAssetPreview from '../useAssetPreview';
 import { Modal } from './Dialogs';
 import PaperReader from './PaperReader';
 import ImageReader from './ImageReader';
+import { ReadingTranslationProvider } from './ReadingTranslation';
 import '../asset-reader.css';
 
 const WordEditor=lazy(()=>import('./WordEditor'));
 export default function FileReader(props:FileReaderProps){
   const kind=getAssetKind(props.paper);
-  if(kind==='pdf')return <PaperReader {...props}/>;
   if(kind==='image')return <ImageReader {...props}/>;
-  return <OfficeReader key={props.paper.fileId} {...props}/>;
+  return <ReadingTranslationProvider key={props.paper.fileId}>{kind==='pdf'?<PaperReader {...props}/>:<OfficeReader {...props}/>}</ReadingTranslationProvider>;
 }
 function OfficeReader(props:FileReaderProps){
   const {paper,onClose}=props,kind=getAssetKind(paper);
