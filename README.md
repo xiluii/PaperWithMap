@@ -40,6 +40,8 @@ Paperly 是面向桌面研究场景的本地文献工作台。把论文放上无
 
 浅色、暗色、跟随系统三种外观覆盖主要页面。白板、阅读器和笔记页均可进入专注模式，把更多空间留给内容。
 
+光标随选词、拖动、连线、缩放及书写工具变化；右键菜单覆盖画布、卡片、连线、文献库、阅读、图片、笔记与对话历史，常用操作就近完成。支持键盘导航与快捷键，Word 和文本输入保留编辑菜单。
+
 ### 左侧读原文，右侧留下推导
 
 ![文献阅读与手写分屏：左侧连续阅读 PDF，右侧书写自动关联的笔记](Readme/2.png)
@@ -176,7 +178,7 @@ data/
 - [暗色模式验收](docs/dark-mode-acceptance.md) · [工作台设计规范](docs/design-system.md)。
 - [源码发布与隐私](docs/publication.md) · [第三方组件声明](THIRD_PARTY_NOTICES.md)。
 
-当前验收记录：**84 项测试通过**，包含文件持久化、PDF 墨迹、DOCX 修订、真实 Office 转换和 AI 流式协议；TypeScript 与 Vite 构建通过。复验命令为 `npm test` 与 `npm run build`；划词翻译的接口边界与实机验证见[验收记录](docs/reading-translation-acceptance.md)。缺少本地转换器时，Office 用例会明确跳过。
+当前验收记录：**89 项测试通过**，包含文件持久化、PDF 墨迹、DOCX 修订、真实 Office 转换和 AI 流式协议；TypeScript 与 Vite 构建通过。复验命令为 `npm test` 与 `npm run build`；光标与右键菜单见[交互验收](docs/interaction-acceptance.md)，划词翻译见[词典验收](docs/reading-translation-acceptance.md)。缺少本地转换器时，Office 用例会明确跳过。
 
 ## 当前阶段
 

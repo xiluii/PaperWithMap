@@ -5,6 +5,7 @@ import '@xyflow/react/dist/style.css';
 import App from './App';
 import { AiProvider } from './AiProvider';
 import { ThemeProvider } from './ThemeProvider';
+import { ContextMenuProvider } from './components/ContextMenu';
 import './styles.css';
 import './handwriting.css';
 import './cards.css';
@@ -15,5 +16,6 @@ import './ai.css';
 import './dark.css';
 import './chat-design.css';
 import './reading-translation.css';
+import './interaction.css';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><ThemeProvider><ReactFlowProvider><AiProvider><App /></AiProvider></ReactFlowProvider></ThemeProvider></React.StrictMode>);
+ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><ThemeProvider><ReactFlowProvider><ContextMenuProvider><AiProvider><App /></AiProvider></ContextMenuProvider></ReactFlowProvider></ThemeProvider></React.StrictMode>);

@@ -11,6 +11,7 @@ type TranslationContext = {
   enabled: boolean; toggle: () => void;
   askAi: MutableRefObject<((selection: ReadingSelection) => void) | null>;
   reportWordSelection: (text: string | null, mount: Element) => void;
+  translateSelection: (selection: Selection) => void;
 };
 const Context = createContext<TranslationContext | null>(null);
 export const useReadingTranslation = () => useContext(Context);
@@ -27,6 +28,11 @@ export function ReadingTranslationProvider({ children }: { children: ReactNode }
   const dismiss = useCallback(() => {
     if (!pending.current && !selectionRef.current) return;
     pending.current?.abort(); pending.current = null; selectionRef.current = null; setSelection(null); setResult({});
+  }, []);
+  const translateSelection = useCallback((next: Selection) => {
+    if (!enabledRef.current) return;
+    pending.current?.abort(); selectionRef.current = next;
+    setResult({ loading: true }); setSelection(next);
   }, []);
   const reportWordSelection = useCallback((value: string | null, mount: Element) => {
     if (!enabledRef.current) return;
@@ -79,11 +85,13 @@ export function ReadingTranslationProvider({ children }: { children: ReactNode }
     document.addEventListener('pointerdown', outside, true);
     document.addEventListener('scroll', scroll, true);
     document.addEventListener('keydown', key, true);
+    document.addEventListener('contextmenu', dismiss, true);
     window.addEventListener('resize', dismiss);
     return () => {
       document.removeEventListener('pointerup', capture); document.removeEventListener('keyup', capture);
       document.removeEventListener('pointerdown', outside, true); document.removeEventListener('scroll', scroll, true);
       document.removeEventListener('keydown', key, true); window.removeEventListener('resize', dismiss);
+      document.removeEventListener('contextmenu', dismiss, true);
     };
   }, [enabled, dismiss]);
   useEffect(() => {
@@ -100,7 +108,7 @@ export function ReadingTranslationProvider({ children }: { children: ReactNode }
     return () => { clearTimeout(timer); controller.abort(); };
   }, [enabled, selection]);
   useEffect(() => () => pending.current?.abort(), []);
-  return <Context.Provider value={{ enabled, toggle, askAi, reportWordSelection }}>{children}{enabled && selection && createPortal(
+  return <Context.Provider value={{ enabled, toggle, askAi, reportWordSelection, translateSelection }}>{children}{enabled && selection && createPortal(
     <TranslationPopover selection={selection} result={result} onClose={dismiss} onRetry={() => { setResult({ loading: true }); setSelection({ ...selection }); }} onAskAi={askAi.current ? () => { askAi.current?.({ text: selection.text, x: selection.rect.left, y: selection.rect.bottom + 7, page: selection.page }); dismiss(); } : undefined} />,
     selection.root,
   )}</Context.Provider>;

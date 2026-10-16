@@ -9,11 +9,14 @@ import { Modal } from './Dialogs';
 import FocusModeButton from './FocusModeButton';
 import useFocusMode from '../useFocusMode';
 import ThemeControl from './ThemeControl';
+import { useContextMenu } from './ContextMenu';
+import { menuSeparator } from '../context-menu';
 
 type InkFrame={strokes:InkStroke[];theme:InkTheme};
 type Props={note:HandwrittenNote;embedded?:boolean;saveState:'saving'|'saved'|'error';anchorTitle?:string;boardTitle?:string;onUpdate:(patch:Partial<HandwrittenNote>)=>void;onClose:()=>void;onLink:()=>void;onLocate:()=>void;onPresentation:()=>void;onInsertToPdf?:()=>void};
 function inkPreferences():{width:number;pressure:boolean;penOnly:boolean}{try{const value=JSON.parse(localStorage.getItem('paperly:ink-preferences')||'{}');return {width:typeof value.width==='number'?Math.min(12,Math.max(1,value.width)):3,pressure:typeof value.pressure==='boolean'?value.pressure:true,penOnly:typeof value.penOnly==='boolean'?value.penOnly:false};}catch{return {width:3,pressure:true,penOnly:false};}}
 export default function InkEditor({note,embedded=false,saveState,anchorTitle,boardTitle,onUpdate,onClose,onLink,onLocate,onPresentation,onInsertToPdf}:Props){
+  const contextMenu=useContextMenu();
   const [preferences]=useState(inkPreferences);
   const [tool,setTool]=useState<InkTool>('pen');
   const [color,setColor]=useState(INK_THEMES[note.theme].foreground);
@@ -39,7 +42,25 @@ export default function InkEditor({note,embedded=false,saveState,anchorTitle,boa
   const changeTheme=(theme:InkTheme)=>{if(note.theme===theme)return;canvas.current?.finish();const previous=INK_THEMES[note.theme],next=INK_THEMES[theme];const strokes=note.strokes.map(stroke=>{const index=previous.colors.indexOf(stroke.color);return index<0?stroke:{...stroke,color:next.colors[index]};});const index=previous.colors.indexOf(color);setColor(index<0?next.foreground:next.colors[index]);changeInk(strokes,theme);};
   const exportImage=()=>{canvas.current?.finish();const strokes=current.current.strokes,bounds=inkBounds(strokes),padding=60;const scale=Math.min(2,4096/(bounds.width+padding*2),4096/(bounds.height+padding*2));const output=document.createElement('canvas');output.width=Math.ceil((bounds.width+padding*2)*scale);output.height=Math.ceil((bounds.height+padding*2)*scale);const context=output.getContext('2d');if(!context)return;context.fillStyle=INK_THEMES[current.current.theme].background;context.fillRect(0,0,output.width,output.height);context.setTransform(scale,0,0,scale,(padding-bounds.x)*scale,(padding-bounds.y)*scale);strokes.forEach(stroke=>drawStroke(context,stroke));output.toBlob(blob=>{if(!blob)return;const url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=safeFilename(current.current.title)+'.png';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});};
   const theme=INK_THEMES[note.theme];
-  return <section ref={editor} tabIndex={-1} className={`ink-editor ink-theme-${note.theme} ${embedded?'ink-embedded':''} ${focus.focused?'ink-focused':''}`} aria-label={`手写笔记：${note.title}`} style={{'--ink-background':theme.background,'--ink-foreground':theme.foreground} as React.CSSProperties} onKeyDown={event=>{
+  const openInkMenu=(event:React.MouseEvent)=>{
+    if(!(event.target as Element).closest('.ink-surface'))return;
+    canvas.current?.finish();
+    const choose=(value:InkTool)=>{canvas.current?.finish();setTool(value);};
+    contextMenu.open(event,'手写画布',[
+      {id:'undo',label:'撤销笔画',icon:Undo2,shortcut:'Ctrl+Z',disabled:!history.current.past.length,onSelect:undo},
+      {id:'redo',label:'重做笔画',icon:Redo2,shortcut:'Ctrl+Shift+Z',disabled:!history.current.future.length,onSelect:redo},menuSeparator,
+      {id:'pen',label:'钢笔',icon:PenLine,shortcut:'B',checked:tool==='pen',onSelect:()=>choose('pen')},
+      {id:'highlight',label:'荧光笔',icon:Highlighter,checked:tool==='highlighter',onSelect:()=>choose('highlighter')},
+      {id:'eraser',label:'笔画橡皮',icon:Eraser,shortcut:'E',checked:tool==='eraser',onSelect:()=>choose('eraser')},
+      {id:'hand',label:'抓手',icon:Hand,shortcut:'H',checked:tool==='hand',onSelect:()=>choose('hand')},menuSeparator,
+      {id:'fit',label:'显示全部笔迹',icon:Scan,onSelect:()=>canvas.current?.fit()},
+      {id:'focus',label:'专注书写',icon:Maximize2,checked:focus.focused,onSelect:focus.toggle},
+      {id:'link',label:'关联卡片',icon:Link2,onSelect:onLink},menuSeparator,
+      ...(['light','dark','green'] as InkTheme[]).map(value=>({id:value,label:INK_THEMES[value].name,checked:note.theme===value,onSelect:()=>changeTheme(value)})),menuSeparator,
+      {id:'clear',label:'清空画布…',icon:Trash2,danger:true,disabled:!note.strokes.length,onSelect:()=>setClearDialog(true)},
+    ]);
+  };
+  return <section onContextMenu={openInkMenu} ref={editor} tabIndex={-1} className={`ink-editor ink-theme-${note.theme} ${embedded?'ink-embedded':''} ${focus.focused?'ink-focused':''}`} aria-label={`手写笔记：${note.title}`} style={{'--ink-background':theme.background,'--ink-foreground':theme.foreground} as React.CSSProperties} onKeyDown={event=>{
     focus.onKeyDown(event);
     if(event.defaultPrevented||(event.target as HTMLElement).closest('[role="dialog"]')!==event.currentTarget.closest('[role="dialog"]')||(event.target as HTMLElement).closest('input,textarea,select,[contenteditable="true"]'))return;
     if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='z'){event.preventDefault();event.stopPropagation();if(event.shiftKey)redo();else undo();}

@@ -2,14 +2,18 @@ import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 
 import type { ReactNode } from 'react';
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from 'pdfjs-dist';
 import { TextLayer } from 'pdfjs-dist';
-import { FileWarning, LoaderCircle, Minus, Plus, Scan } from 'lucide-react';
+import { Copy, Languages, FileWarning, LoaderCircle, Minus, Plus, Scan } from 'lucide-react';
+import { useContextMenu } from './ContextMenu';
+import { useReadingTranslation } from './ReadingTranslation';
+import { menuSeparator, nativeContextTarget } from '../context-menu';
+import type { ContextMenuItem } from '../context-menu';
 import type { PdfPageInk } from '../types';
 import { anchoredScrollTop, pageIndexAtOffset, pdfPageScale } from '../pdf-scroll';
 import '../pdf-reader.css';
 
 export type PdfPageView={pageNumber:number;geometry:Omit<PdfPageInk,'strokes'>;scale:number};
 type PageRecord={pageNumber:number;page:PDFPageProxy|null;geometry:PdfPageView['geometry'];error?:string};
-type Props={url:string;banner?:ReactNode;renderOverlay?:(page:PdfPageView)=>ReactNode;renderFooter?:(page:number,total:number)=>ReactNode};
+type Props={url:string;banner?:ReactNode;renderOverlay?:(page:PdfPageView)=>ReactNode;renderFooter?:(page:number,total:number)=>ReactNode;contextItems?:ContextMenuItem[]};
 
 async function documentPages(pdf:PDFDocumentProxy,live:()=>boolean):Promise<PageRecord[]>{
   const first=await pdf.getPage(1),firstView=first.getViewport({scale:1});
@@ -20,7 +24,8 @@ async function documentPages(pdf:PDFDocumentProxy,live:()=>boolean):Promise<Page
   }));return pages;
 }
 
-export default function ContinuousPdf({url,banner,renderOverlay,renderFooter}:Props){
+export default function ContinuousPdf({url,banner,renderOverlay,renderFooter,contextItems=[]}:Props){
+  const contextMenu=useContextMenu(),translation=useReadingTranslation();
   const [pages,setPages]=useState<PageRecord[]>([]),[error,setError]=useState(''),[zoom,setZoom]=useState(1),[available,setAvailable]=useState(800),[activePage,setActivePage]=useState(1);
   const [root,setRoot]=useState<HTMLDivElement|null>(null),[near,setNear]=useState<Set<number>>(()=>new Set([1])),[pinned,setPinned]=useState<{page:number;pointer:number}|null>(null);
   const stack=useRef<HTMLDivElement>(null),elements=useRef(new Map<number,HTMLElement>()),frame=useRef(0);
@@ -35,8 +40,28 @@ export default function ContinuousPdf({url,banner,renderOverlay,renderFooter}:Pr
   useEffect(()=>{if(!root||!pages.length)return;const observer=new IntersectionObserver(entries=>{setNear(previous=>{const next=new Set(previous);for(const entry of entries){const number=Number((entry.target as HTMLElement).dataset.pdfPage);if(entry.isIntersecting)next.add(number);else next.delete(number);}return next.size===previous.size&&[...next].every(n=>previous.has(n))?previous:next;});},{root,rootMargin:'900px 600px',threshold:0});for(const element of elements.current.values())observer.observe(element);return()=>observer.disconnect();},[root,pages]);
   useEffect(()=>()=>{if(frame.current)cancelAnimationFrame(frame.current);},[]);
   const scroll=()=>{if(!root)return;layout.current.scrollTop=root.scrollTop;if(!frame.current)frame.current=requestAnimationFrame(()=>{frame.current=0;updateActive();});};
+  const openMenu=(event:React.MouseEvent)=>{
+    if(nativeContextTarget(event.target as Element))return;
+    const selected=window.getSelection(),range=selected?.rangeCount?selected.getRangeAt(0):null;
+    const text=selected&&!selected.isCollapsed&&range&&root?.contains(range.startContainer)&&root.contains(range.endContainer)?selected.toString().trim():'';
+    const items:ContextMenuItem[]=[];
+    if(text){
+      items.push({id:'copy-selection',label:'复制选中文字',icon:Copy,shortcut:'Ctrl+C',onSelect:async()=>{try{await navigator.clipboard.writeText(text);}catch{throw new Error('无法访问剪贴板，请选中文字后按 Ctrl+C 复制');}}});
+      const modal=root?.closest('.paper-reader-modal'),rect=range!.getBoundingClientRect();
+      const start=range!.startContainer instanceof Element?range!.startContainer:range!.startContainer.parentElement;
+      const page=Number(start?.closest('[data-pdf-page]')?.getAttribute('data-pdf-page'))||undefined;
+      if(translation?.enabled&&modal)items.push({id:'translate',label:'查询选中词语',icon:Languages,onSelect:()=>translation.translateSelection({text,rect,root:modal,page})});
+      items.push(menuSeparator);
+    }
+    items.push({id:'zoom-in',label:'放大页面',icon:Plus,disabled:zoom>=3,onSelect:()=>setZoom(z=>Math.min(3,z*1.2))},
+      {id:'zoom-out',label:'缩小页面',icon:Minus,disabled:zoom<=.5,onSelect:()=>setZoom(z=>Math.max(.5,z/1.2))},
+      {id:'fit',label:'页面适合宽度',icon:Scan,onSelect:()=>setZoom(1)});
+    if(translation)items.push({id:'translation',label:'划词翻译',icon:Languages,checked:translation.enabled,onSelect:translation.toggle});
+    if(contextItems.length)items.push(menuSeparator,...contextItems);
+    contextMenu.open(event,text?'原文选区':'文献阅读',items);
+  };
   return <section className="continuous-pdf" aria-label="PDF 连续阅读"><div className="pdf-navigation"><div className="pdf-reading-progress"><span>连续阅读</span><i/><span aria-live="polite">第 {activePage} 页 <i>/ {pages.length||'—'} 页</i></span></div><div><button className="icon-button" title="缩小 PDF" aria-label="缩小 PDF" disabled={zoom<=.5} onClick={()=>setZoom(z=>Math.max(.5,z/1.2))}><Minus size={15}/></button><span className="pdf-zoom-label">{Math.round(zoom*100)}%</span><button className="icon-button" title="放大 PDF" aria-label="放大 PDF" disabled={zoom>=3} onClick={()=>setZoom(z=>Math.min(3,z*1.2))}><Plus size={15}/></button><button className="icon-button" title="PDF 适合宽度" aria-label="PDF 适合宽度" onClick={()=>setZoom(1)}><Scan size={15}/></button></div></div>{banner}
-    <div ref={setRoot} className="pdf-scroll-area pdf-continuous-scroll" role="region" aria-label="PDF 连续阅读区域" tabIndex={0} onScroll={scroll}>{error?<div className="reader-error" role="alert"><FileWarning size={23}/><p>{error}</p></div>:!pages.length?<div className="reader-loading"><LoaderCircle className="spin" size={18}/>正在加载 PDF 全文…</div>:<><div ref={stack} className="pdf-document-stack">{pages.map(record=>{const scale=pdfPageScale(record.geometry.width,available,zoom),mounted=near.has(record.pageNumber)||pinned?.page===record.pageNumber;return <article key={record.pageNumber} ref={element=>{if(element)elements.current.set(record.pageNumber,element);else elements.current.delete(record.pageNumber);}} className="pdf-document-page" data-pdf-page={record.pageNumber} aria-label={`PDF 第 ${record.pageNumber} 页`} style={{width:record.geometry.width*scale}} onPointerDownCapture={event=>{if(renderOverlay)setPinned({page:record.pageNumber,pointer:event.pointerId});}} onPointerUpCapture={event=>{if(pinned?.pointer===event.pointerId)setPinned(null);}} onPointerCancelCapture={()=>setPinned(null)} onLostPointerCapture={()=>setPinned(null)}><div className="pdf-page-caption">第 {record.pageNumber} 页 <span>/ {pages.length}</span></div><div className="pdf-page-frame" style={{width:record.geometry.width*scale,height:record.geometry.height*scale}}>{record.error?<div className="reader-error">{record.error}</div>:mounted?<><PdfPageCanvas page={record.page!} pageNumber={record.pageNumber} scale={scale}/>{renderOverlay?.({pageNumber:record.pageNumber,geometry:record.geometry,scale})}</>:<div className="pdf-page-placeholder" aria-label={`第 ${record.pageNumber} 页待显示`}>第 {record.pageNumber} 页</div>}</div></article>;})}</div><div className="pdf-document-end">已到文章末尾 <i/> 共 {pages.length} 页</div></>}</div>
+    <div ref={setRoot} className="pdf-scroll-area pdf-continuous-scroll" onContextMenu={openMenu} role="region" aria-label="PDF 连续阅读区域" tabIndex={0} onScroll={scroll}>{error?<div className="reader-error" role="alert"><FileWarning size={23}/><p>{error}</p></div>:!pages.length?<div className="reader-loading"><LoaderCircle className="spin" size={18}/>正在加载 PDF 全文…</div>:<><div ref={stack} className="pdf-document-stack">{pages.map(record=>{const scale=pdfPageScale(record.geometry.width,available,zoom),mounted=near.has(record.pageNumber)||pinned?.page===record.pageNumber;return <article key={record.pageNumber} ref={element=>{if(element)elements.current.set(record.pageNumber,element);else elements.current.delete(record.pageNumber);}} className="pdf-document-page" data-pdf-page={record.pageNumber} aria-label={`PDF 第 ${record.pageNumber} 页`} style={{width:record.geometry.width*scale}} onPointerDownCapture={event=>{if(renderOverlay)setPinned({page:record.pageNumber,pointer:event.pointerId});}} onPointerUpCapture={event=>{if(pinned?.pointer===event.pointerId)setPinned(null);}} onPointerCancelCapture={()=>setPinned(null)} onLostPointerCapture={()=>setPinned(null)}><div className="pdf-page-caption">第 {record.pageNumber} 页 <span>/ {pages.length}</span></div><div className="pdf-page-frame" style={{width:record.geometry.width*scale,height:record.geometry.height*scale}}>{record.error?<div className="reader-error">{record.error}</div>:mounted?<><PdfPageCanvas page={record.page!} pageNumber={record.pageNumber} scale={scale}/>{renderOverlay?.({pageNumber:record.pageNumber,geometry:record.geometry,scale})}</>:<div className="pdf-page-placeholder" aria-label={`第 ${record.pageNumber} 页待显示`}>第 {record.pageNumber} 页</div>}</div></article>;})}</div><div className="pdf-document-end">已到文章末尾 <i/> 共 {pages.length} 页</div></>}</div>
     <footer className="pdf-page-status">{renderFooter?renderFooter(activePage,pages.length):<><span>滚动连续阅读</span><span>共 {pages.length||'—'} 页</span></>}</footer>
   </section>;
 }

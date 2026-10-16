@@ -1,0 +1,53 @@
+/* Use familiar system cursors; drawing cursors share a clearly marked ink point. */
+button, a[href], summary, [role='button'], [role='switch'], [role='tab'], select,
+input:is([type='checkbox'],[type='radio'],[type='color']), label[for] { cursor: pointer; }
+input:not([type]), input:is([type='text'],[type='search'],[type='number'],[type='url'],[type='email']), textarea, [contenteditable='true'] { cursor: text; }
+input[type='range'] { cursor: ew-resize; }
+:root :is(button,input,select,textarea):disabled, [aria-disabled='true'] { cursor: not-allowed; }
+button[aria-busy='true'] { cursor: progress; }
+.canvas-container .react-flow__pane { cursor: default; }
+.canvas-container .react-flow__pane.selection { cursor: crosshair; }
+.canvas-container .react-flow__node.draggable, .canvas-container .react-flow__pane.draggable, .canvas-container.hand-mode .react-flow__pane, .canvas-container.hand-mode .canvas-card-shell { cursor: grab; }
+.canvas-container .react-flow__node.dragging, .canvas-container .react-flow__pane.dragging { cursor: grabbing; }
+.canvas-container.timeline-mode .react-flow__node { cursor: default; }
+.canvas-container.connect-mode .react-flow__pane, .canvas-container .paper-port,
+.canvas-container .react-flow__handle.connectionindicator { cursor: crosshair; }
+.canvas-container .react-flow__edge-interaction { cursor: pointer; }
+.canvas-card-shell .card-resize-handle { cursor: nwse-resize; }
+[role='separator'][aria-orientation='vertical'], .split-divider-grip { cursor: col-resize; }
+.ink-surface.ink-tool-pen { cursor: url('/cursors/pen.svg') 3 28, crosshair; }
+.ink-surface.ink-tool-highlighter { cursor: url('/cursors/highlighter.svg') 4 27, crosshair; }
+.ink-surface.ink-tool-eraser { cursor: url('/cursors/eraser.svg') 14 14, crosshair; }
+.ink-surface:is(.ink-tool-hand,.ink-space-held), .image-viewport, .image-viewport:active { cursor: grab; }
+.ink-surface.ink-is-panning, .image-viewport.dragging { cursor: grabbing; }
+.pdf-selectable-text, .pdf-selectable-text span { cursor: text; }
+.pdf-place-layer { cursor: copy; }
+.app-context-layer { position: fixed; inset: 0; z-index: 2000; cursor: default; }
+.app-context-menu {
+  --context-danger: #a9453e;
+  position: fixed; width: 254px; max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px);
+  padding: 6px; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--paper); color: var(--ink); box-shadow: 0 12px 48px #071e3030, 0 2px 8px #071e3014;
+  font-size: 12px; line-height: 1.5; text-align: left; outline: none; animation: context-menu-in .1s ease-out;
+}
+.app-context-caption { padding: 7px 10px 9px; color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-context-menu > :is(button,a) { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 35px; padding: 7px 9px; border: 0; border-radius: 6px; color: var(--ink); text-decoration: none; background: transparent; text-align: left; }
+.app-context-menu > :is(button,a):is(:hover,:focus-visible):not(:disabled) { color: var(--green-dark); background: var(--green-light); outline: none; }
+.app-context-menu > :is(button,a):disabled { opacity: .4; }
+.app-context-icon { display: flex; width: 16px; flex-shrink: 0; color: var(--muted); }
+.app-context-label { flex: 1; }
+.app-context-menu kbd { color: var(--muted); font: inherit; font-size: 10px; }
+.app-context-check { color: var(--green-dark); flex-shrink: 0; }
+:root[data-theme='dark'] .app-context-menu { --context-danger: #f29b94; }
+.app-context-menu > .is-danger:not(:disabled), .app-context-menu > .is-danger .app-context-icon { color: var(--context-danger); }
+.app-context-menu > .is-danger:is(:hover,:focus-visible):not(:disabled) { color: var(--context-danger); background: var(--surface-hover); }
+.app-context-separator { height: 1px; margin: 5px 5px; background: var(--border); }
+.app-context-hint { display: flex; justify-content: space-between; margin-top: 6px; padding: 7px 9px 3px; border-top: 1px solid var(--border); color: var(--muted); font-size: 10px; }
+.context-menu-error { position: fixed; z-index: 2100; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; align-items: center; gap: 20px; max-width: calc(100vw - 32px); padding: 12px 15px; border: 1px solid var(--border); border-radius: 9px; background: var(--paper); color: var(--ink); box-shadow: 0 8px 32px #071e3033; font-size: 12px; }
+.context-menu-error > button { display: grid; place-items: center; color: var(--muted); }
+@keyframes context-menu-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .app-context-menu { animation: none; } }
+
+:root:has(.canvas-card-shell.card-resizing) * { cursor: nwse-resize !important; }
+:root:has(.split-divider-grip.is-resizing) * { cursor: col-resize !important; }
+:root:has(.canvas-container .react-flow__node.dragging) * { cursor: grabbing !important; }

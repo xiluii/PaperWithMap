@@ -35,10 +35,10 @@ export default function SplitDivider({container,size,onChange}:{container:RefObj
       onDoubleClick={()=>change(40)} onKeyDown={event=>{
         const value=event.key==='ArrowLeft'?effectiveSize+2:event.key==='ArrowRight'?effectiveSize-2:event.key==='Home'?bounds().min:event.key==='End'?bounds().max:event.key==='Enter'?40:null;
         if(value===null)return;event.preventDefault();event.stopPropagation();change(value);
-      }} onPointerDown={event=>{if(event.button!==0)return;event.preventDefault();pointer.current=event.pointerId;event.currentTarget.setPointerCapture(event.pointerId);event.currentTarget.focus();}}
+      }} onPointerDown={event=>{if(event.button!==0)return;event.preventDefault();pointer.current=event.pointerId;event.currentTarget.setPointerCapture(event.pointerId);event.currentTarget.classList.add('is-resizing');event.currentTarget.focus();}}
       onPointerMove={event=>{if(pointer.current!==event.pointerId)return;const rect=container.current?.getBoundingClientRect();if(!rect)return;pending.current=(rect.right-event.clientX)/rect.width*100;if(!frame.current)frame.current=requestAnimationFrame(flush);}}
-      onPointerUp={event=>{if(pointer.current!==event.pointerId)return;flush();pointer.current=null;if(event.currentTarget.hasPointerCapture(event.pointerId))event.currentTarget.releasePointerCapture(event.pointerId);}}
-      onPointerCancel={()=>{flush();pointer.current=null;}} onLostPointerCapture={()=>{flush();pointer.current=null;}}><GripVertical size={15}/></div>
+      onPointerUp={event=>{if(pointer.current!==event.pointerId)return;flush();pointer.current=null;event.currentTarget.classList.remove('is-resizing');if(event.currentTarget.hasPointerCapture(event.pointerId))event.currentTarget.releasePointerCapture(event.pointerId);}}
+      onPointerCancel={event=>{flush();pointer.current=null;event.currentTarget.classList.remove('is-resizing');}} onLostPointerCapture={event=>{flush();pointer.current=null;event.currentTarget.classList.remove('is-resizing');}}><GripVertical size={15}/></div>
     <button aria-label="扩大笔记区域" title="扩大笔记区域" disabled={effectiveSize>=limits.max-.01} onClick={()=>change(effectiveSize+5)}><ChevronLeft size={14}/></button>
   </div></div>;
 }
