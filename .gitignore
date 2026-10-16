@@ -31,6 +31,9 @@ accounts.json
 *.p12
 *.pfx
 
+# Source screenshot contains a personal account; keep it local
+/Readme/3.png
+
 # Operating system files
 .DS_Store
 Thumbs.db
