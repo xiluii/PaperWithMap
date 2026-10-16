@@ -23,7 +23,8 @@ export default function CodexAccountControls({ onModels }: { onModels: (models: 
   };
   const disabled = working || busy.size > 0;
   return <div className={`ai-account codex-account ${connected ? 'is-connected' : ''}`}>
-    {connected ? <details className="ai-account-menu"><summary><span className="ai-account-dot"/><span>{account?.email || '本机 Codex'}<small>本地 Codex 桥接 · 使用 Codex 额度{account?.plan ? ` · ${account.plan}` : ''}</small></span><span>⌄</span></summary><div className="ai-account-options">
+    {connected ? <details className="ai-account-menu"><summary><Monitor size={15} aria-hidden="true"/><span><b>本机 Codex</b><small><span className="ai-account-dot"/>已连接</small></span><span aria-hidden="true">⌄</span></summary><div className="ai-account-options">
+      <div className="ai-account-identity"><small>当前登录账号</small><b>{account?.email || '本机 Codex'}</b>{account?.plan&&<span>Codex 套餐 · {account.plan}</span>}</div>
       <p className="codex-account-description">使用本机 Codex 当前登录。切换登录会同步影响共用该登录的本地 Codex。</p>
       <button disabled={disabled} onClick={() => void action('/auth/refresh')}><RefreshCw size={13}/>检测本机登录</button>
       <button disabled={disabled} onClick={() => void models()}><RefreshCw size={13}/>刷新可用模型</button>

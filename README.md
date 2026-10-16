@@ -64,7 +64,7 @@ Word、PDF 和 PPT 均可选择在平台内或默认软件中打开。旧 DOC �
 
 ### 阅读 AI，让提问也有出处
 
-阅读侧栏可在手写笔记与 AI 对话之间切换。选区提问、全文总结和公式解释共用当前文献上下文；回答支持 Markdown、表格与 LaTeX，按增量实时显示，可停止生成。
+阅读侧栏可在手写笔记与 AI 对话之间切换。选区提问、全文总结和公式解释共用当前文献上下文；提问与回答支持 Markdown、表格与 LaTeX，代码块可复制，回答可切换源码与预览。内容按增量实时显示，可停止生成。
 
 模型和推理强度由本机 Codex 返回的能力决定，并记住各模型的选择。回答可保存为自动连回来源文献的文字卡片；首页对话历史支持检索、分页、继续提问和 Markdown 导出。
 
@@ -170,10 +170,11 @@ data/
 - [使用与开发指南](docs/user-guide.md)：操作、配置、备份、快捷键和开发命令。
 - [多文件验收](docs/multi-file-acceptance.md)：Word 保存、PPT 转换、图片与关联笔记。
 - [Codex 桥接验收](docs/codex-bridge-acceptance.md)：真实调用、流式输出、推理强度与本地历史。
+- [对话界面验收](docs/chat-ui-acceptance.md)：Markdown 排版、中文强调、代码复制和窄窗口布局。
 - [暗色模式验收](docs/dark-mode-acceptance.md) · [工作台设计规范](docs/design-system.md)。
 - [源码发布与隐私](docs/publication.md) · [第三方组件声明](THIRD_PARTY_NOTICES.md)。
 
-当前验收记录：**72 项测试通过**，包含文件持久化、PDF 墨迹、DOCX 修订、真实 Office 转换和 AI 流式协议；TypeScript 与 Vite 构建通过。复验命令为 `npm test` 与 `npm run build`。缺少本地转换器时，Office 用例会明确跳过。
+当前验收记录：**76 项测试通过**，包含文件持久化、PDF 墨迹、DOCX 修订、真实 Office 转换和 AI 流式协议；TypeScript 与 Vite 构建通过。复验命令为 `npm test` 与 `npm run build`。缺少本地转换器时，Office 用例会明确跳过。
 
 ## 当前阶段
 

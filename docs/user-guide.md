@@ -315,7 +315,7 @@ npm run build
 
 多文件测试还覆盖图片实际解码、EXIF 方向和缩略图、DOCX 修订保存与原件保留、外部修改冲突、伪装文件拒绝，以及真实旧 DOC、PPT/PPTX 本地转换。缺少相应本地转换器时，Office 转换用例会明确跳过；不能据此视为已完成 Office 功能验收。完整记录见 [多文件验收记录](multi-file-acceptance.md)。
 
-AI 测试使用真实本地 HTTP 服务和子进程 stdio，覆盖 Codex 桥接、ChatGPT 登录模式检查、完整历史与图像输入、首段流式到达、推理强度验证与落盘、停止、并发隔离、进程崩溃、设备码与工具拒绝；同时保留旧 SIWC 的签名 JWT 和仿真上游回归。自动测试不消耗真实套餐，独立的真实账号验收另有记录。共 72 项测试通过，记录见 [Codex 桥接验收](codex-bridge-acceptance.md)及[旧阅读 AI 验收](reading-ai-acceptance.md)。
+AI 测试使用真实本地 HTTP 服务和子进程 stdio，覆盖 Codex 桥接、ChatGPT 登录模式检查、完整历史与图像输入、首段流式到达、推理强度验证与落盘、停止、并发隔离、进程崩溃、设备码与工具拒绝；同时保留旧 SIWC 的签名 JWT 和仿真上游回归。自动测试不消耗真实套餐，独立的真实账号验收另有记录。加上 Markdown 排版与中文强调回归，共 76 项测试通过，记录见 [对话界面验收](chat-ui-acceptance.md)、[Codex 桥接验收](codex-bridge-acceptance.md)及[旧阅读 AI 验收](reading-ai-acceptance.md)。
 
 浏览器验证用的 PDF 可重新生成：
 
