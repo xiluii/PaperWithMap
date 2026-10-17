@@ -10,11 +10,13 @@ import AiChatPanel from './AiChatPanel';
 import { Modal } from './Dialogs';
 import { useContextMenu } from './ContextMenu';
 import { menuSeparator } from '../context-menu';
+import {SidebarControls,useDockSide,usePanelWidth} from './PanelControls';
 
 type Props={workspace:Workspace;selectedId:string|null;onSelect:(id:string|null)=>void;onOpenSource:(anchor:NoteAnchor)=>void;onSaveNote:SaveAiNote};
 const previewText=(text:string)=>text.replace(/```[\s\S]*?(?:```|$)/g,' [代码] ').replace(/!?\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/[#>*_~`$]/g,'').replace(/\s+/g,' ').trim();
 export default function ConversationHistory({workspace,selectedId,onSelect,onOpenSource,onSaveNote}:Props){
   const contextMenu=useContextMenu();
+  const [listWidth,setListWidth]=usePanelWidth('conversation-list',310),[listSide,setListSide]=useDockSide('conversation-list','left');
   const ai=useAi();const [query,setQuery]=useState(''),[search,setSearch]=useState(''),[fileId,setFileId]=useState(''),[page,setPage]=useState(1),[result,setResult]=useState<ConversationPage|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[retry,setRetry]=useState(0),[dialog,setDialog]=useState<'rename'|'delete'|null>(null),[title,setTitle]=useState(''),[working,setWorking]=useState(false);
   const conversation=selectedId?ai.conversations[selectedId]:undefined,busy=!!selectedId&&ai.busy.has(selectedId);
   const files=[...new Map(workspace.boards.flatMap(board=>board.nodes.flatMap(node=>node.type==='paper'&&node.data.fileId?[[node.data.fileId,node.data.title] as const]:[]))).entries()];
@@ -25,7 +27,7 @@ export default function ConversationHistory({workspace,selectedId,onSelect,onOpe
   const confirm=async()=>{if(!selectedId)return;setWorking(true);setError('');try{if(dialog==='rename')ai.put(await renameConversation(selectedId,title));else{await deleteConversation(selectedId);onSelect(null);}ai.changed();setDialog(null);}catch(error){setError((error as Error).message);}finally{setWorking(false);}};
   const pageCount=Math.max(1,Math.ceil((result?.total||0)/20));
   return <div className="conversation-history"><div className="conversation-history-heading"><div><span className="conversation-eyebrow"><MessageSquare size={13}/>研究对话</span><h1>对话历史<span>{result?.total||0}</span></h1><p>从一个问题，回到一篇文献与当时的思考。</p></div><span className="conversation-local-badge"><span/>本平台对话 · 本地保存</span></div>
-    <div className="conversation-history-body"><aside className="conversation-list-pane"><div className="conversation-search"><Search size={16}/><input aria-label="搜索对话历史" placeholder="搜索提问、回答或文献…" value={query} onChange={event=>setQuery(event.target.value)}/></div><select className="conversation-source-filter" aria-label="按文献筛选对话" value={fileId} onChange={event=>{setFileId(event.target.value);setPage(1);onSelect(null);}}><option value="">全部文献</option>{files.map(([id,title])=><option key={id} value={id}>{title}</option>)}</select>
+    <div className="conversation-history-body"><aside className="conversation-list-pane" style={{width:listWidth,order:listSide==='left'?0:2}}><SidebarControls label="对话列表侧栏" side={listSide} onSide={setListSide} width={listWidth} onWidth={setListWidth} reset={310}/><div className="conversation-search"><Search size={16}/><input aria-label="搜索对话历史" placeholder="搜索提问、回答或文献…" value={query} onChange={event=>setQuery(event.target.value)}/></div><select className="conversation-source-filter" aria-label="按文献筛选对话" value={fileId} onChange={event=>{setFileId(event.target.value);setPage(1);onSelect(null);}}><option value="">全部文献</option>{files.map(([id,title])=><option key={id} value={id}>{title}</option>)}</select>
       <div className="conversation-list" aria-label="所有对话历史" aria-busy={loading}>{loading&&!result?<div className="ai-loading"><LoaderCircle size={17} className="spin"/>读取本地对话…</div>:result?.items.length?result.items.map(item=><button key={item.id} className={`conversation-list-item ${selectedId===item.id?'active':''}`} onContextMenu={event=>contextMenu.open(event,item.title,[
         {id:'open',label:'继续对话',icon:MessageSquare,onSelect:()=>onSelect(item.id)},
         {id:'source',label:'打开关联文献',icon:FileText,disabled:!workspace.boards.some(board=>board.id===item.source.anchor.boardId&&board.nodes.some(node=>node.id===item.source.anchor.nodeId&&node.type==='paper')),onSelect:()=>onOpenSource(item.source.anchor)},

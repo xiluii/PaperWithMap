@@ -24,7 +24,7 @@ export default function AiChatPanel({conversationId,onConversation,source,select
   const busy=!!conversationId&&ai.busy.has(conversationId),connected=!ai.auth?.pending&&ai.auth?.accounts.some(account=>account.id===ai.auth?.activeId&&account.connected&&account.planEnabled);
   const messages=conversation?.messages||[],last=messages.at(-1);
   useEffect(()=>{if(!conversationId){setDraft('');setError('');setScope(selection?'selection':'document');return;}let live=true;setLoading(true);setError('');ai.load(conversationId).then(()=>{if(live)setScope(selection?'selection':'saved');}).catch(error=>{if(live)setError(error.message);}).finally(()=>{if(live)setLoading(false);});return()=>{live=false;};},[conversationId,ai.load]);
-  useEffect(()=>{if(selection){setScope('selection');textarea.current?.focus({preventScroll:true});}},[selection]);
+  useEffect(()=>{if(selection)setScope('selection');},[selection]);
   useEffect(()=>{if(pinned.current)thread.current?.scrollTo({top:thread.current.scrollHeight,behavior:'instant'});},[last?.text,messages.length,conversationId]);
   useEffect(()=>{pinned.current=true;},[conversationId]);
   const send=async(prompt=draft,action?:'summary'|'formula'|'selection')=>{

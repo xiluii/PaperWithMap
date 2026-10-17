@@ -17,5 +17,6 @@ import './dark.css';
 import './chat-design.css';
 import './reading-translation.css';
 import './interaction.css';
+import './panel-layout.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><ThemeProvider><ReactFlowProvider><ContextMenuProvider><AiProvider><App /></AiProvider></ContextMenuProvider></ReactFlowProvider></ThemeProvider></React.StrictMode>);

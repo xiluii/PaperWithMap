@@ -17,7 +17,7 @@ export function checkDocumentText(text:string){if(!text.trim())throw new Error('
 export function currentPdfPage(){
   const root=document.querySelector<HTMLElement>('.paper-pdf-pane .pdf-continuous-scroll');if(!root)throw new Error('请先在平台内打开文献');const bounds=root.getBoundingClientRect();
   const pages=[...root.querySelectorAll<HTMLElement>('[data-pdf-page]')];
-  const page=pages.sort((a,b)=>{const visible=(node:HTMLElement)=>{const r=node.getBoundingClientRect();return Math.max(0,Math.min(bounds.bottom,r.bottom)-Math.max(bounds.top,r.top));};return visible(b)-visible(a);})[0];
+  const page=(!root.clientWidth?pages.find(page=>page.dataset.pdfPage===root.dataset.activePage):null)||pages.sort((a,b)=>{const visible=(node:HTMLElement)=>{const r=node.getBoundingClientRect();return Math.max(0,Math.min(bounds.bottom,r.bottom)-Math.max(bounds.top,r.top));};return visible(b)-visible(a);})[0];
   const canvas=page?.querySelector<HTMLCanvasElement>('.pdf-document-canvas');if(!canvas?.width)throw new Error('当前页面仍在加载，请稍后重试');return {page:Number(page.dataset.pdfPage),canvas};
 }
 function canvasImage(source:CanvasImageSource,width:number,height:number){

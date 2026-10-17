@@ -5,6 +5,7 @@ import RichEditor from './RichEditor';
 import { useEffect, useState } from 'react';
 import CardAppearanceSettings from './CardAppearanceSettings';
 import { ASSET_LABELS,getAssetKind } from '../asset-model';
+import {SidebarControls,useDockSide,usePanelWidth} from './PanelControls';
 
 function TagInput({id,tags,onChange}:{id:string;tags:string[];onChange:(tags:string[])=>void}){
   const [draft,setDraft]=useState(tags.join(', '));
@@ -13,11 +14,12 @@ function TagInput({id,tags,onChange}:{id:string;tags:string[];onChange:(tags:str
 }
 
 export default function Inspector({node,edge,nodes,onClose,update,updateEdge,remove,open,appearanceTab,onAppearanceTab,cardDefaults,onAppearance,onResetAppearance,onResizeStart,onResizeEnd}:{node?:AppNode;edge?:AppEdge;nodes:AppNode[];onClose:()=>void;update:(data:Partial<PaperData>|Partial<TextData>)=>void;updateEdge:(edge:AppEdge)=>void;remove:()=>void;open:()=>void;appearanceTab:boolean;onAppearanceTab:(active:boolean)=>void;cardDefaults?:CardAppearance;onAppearance:(patch:CardAppearance)=>void;onResetAppearance:()=>void;onResizeStart:()=>void;onResizeEnd:()=>void}){
+  const [width,setWidth]=usePanelWidth('inspector',310),[side,setSide]=useDockSide('inspector','right');
   if(!node&&!edge)return null;
   const paper=node?.type==='paper'?node.data:null;
   const text=node?.type==='text'?node.data:null;
   const assetKind=paper?getAssetKind(paper):'pdf';
-  return <aside className="inspector"><div className="inspector-heading"><span>{edge?<Link2 size={15}/>:paper?<FileText size={15}/>:<FileText size={15}/>} {edge?'连接关系':paper?'文献信息':'编辑灵感'}</span><button className="icon-button" onClick={onClose} title="关闭详情" aria-label="关闭详情"><X size={17}/></button></div>
+  return <aside className="inspector" style={{width,order:side==='left'?0:2}}><SidebarControls label="卡片详情侧栏" side={side} onSide={setSide} width={width} onWidth={setWidth} reset={310}/><div className="inspector-heading"><span>{edge?<Link2 size={15}/>:paper?<FileText size={15}/>:<FileText size={15}/>} {edge?'连接关系':paper?'文献信息':'编辑灵感'}</span><button className="icon-button" onClick={onClose} title="关闭详情" aria-label="关闭详情"><X size={17}/></button></div>
   {(paper||text)&&<div className="inspector-tabs" role="tablist" aria-label="卡片设置"><button role="tab" aria-selected={!appearanceTab} onClick={()=>onAppearanceTab(false)}>资料编辑</button><button role="tab" aria-selected={appearanceTab} onClick={()=>onAppearanceTab(true)}>卡片显示</button></div>}
   {appearanceTab&&(paper||text)?<div className="inspector-body"><CardAppearanceSettings value={(paper||text)?.appearance} defaults={cardDefaults} kind={paper?'paper':'text'} assetKind={assetKind} onChange={onAppearance} onReset={onResetAppearance} onStart={onResizeStart} onEnd={onResizeEnd}/></div>:<div className="inspector-body">{paper&&<>
     <div className="inspector-eyebrow">{ASSET_LABELS[assetKind]} 资料 <button className={`icon-button ${paper.starred?'is-starred':''}`} title="收藏" onClick={()=>update({starred:!paper.starred})}><Star size={16} fill={paper.starred?'currentColor':'none'}/></button></div>
