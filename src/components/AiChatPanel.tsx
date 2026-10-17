@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, Check, Code2, Copy, Eye, FileText, LoaderCircle, Quote, Sigma, Sparkles, Square, StickyNote, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, Code2, Copy, Eye, FileText, LoaderCircle, Quote, Sigma, SlidersHorizontal, Sparkles, Square, StickyNote, X } from 'lucide-react';
 import { useAi } from '../AiProvider';
 import { createConversation, linkAnswerNote } from '../ai-backend';
 import type { AiModel, ChatMessage, ReadingContext, SaveAiNote } from '../ai-types';
@@ -11,13 +11,14 @@ import AiAccountControls from './AiAccountControls';
 import AiMarkdown from './AiMarkdown';
 import { effortLabel } from '../ai-preferences';
 
-type Props={conversationId:string|null;onConversation:(id:string)=>void;source?:{paper:PaperData;anchor:NoteAnchor};selection?:ReadingSelection|null;onClearSelection?:()=>void;getWordText?:()=>Promise<string>;onSaveNote:SaveAiNote};
-export default function AiChatPanel({conversationId,onConversation,source,selection,onClearSelection,getWordText,onSaveNote}:Props){
+type Props={compact?:boolean;conversationId:string|null;onConversation:(id:string)=>void;source?:{paper:PaperData;anchor:NoteAnchor};selection?:ReadingSelection|null;onClearSelection?:()=>void;getWordText?:()=>Promise<string>;onSaveNote:SaveAiNote};
+export default function AiChatPanel({compact=false,conversationId,onConversation,source,selection,onClearSelection,getWordText,onSaveNote}:Props){
   const ai=useAi(),conversation=conversationId?ai.conversations[conversationId]:undefined;
   const [models,setModels]=useState<AiModel[]>([]),[draft,setDraft]=useState(''),[error,setError]=useState(''),[preparing,setPreparing]=useState(false),[loading,setLoading]=useState(false),[saving,setSaving]=useState<string|null>(null),[copied,setCopied]=useState('');
   const modelInfo=models.find(item=>item.id===ai.preferences.model)||models[0],model=modelInfo?.id||'';
   const efforts=modelInfo?.supportedReasoningEfforts||[],preferredEffort=ai.preferences.efforts[model];
   const effort=efforts.some(option=>option.reasoningEffort===preferredEffort)?preferredEffort:'';
+  const [options,setOptions]=useState(false);
   const [scope,setScope]=useState<'document'|'selection'|'saved'>('document');
   const [rawMessages,setRawMessages]=useState<Set<string>>(new Set()),[showLatest,setShowLatest]=useState(false);
   const thread=useRef<HTMLDivElement>(null),pinned=useRef(true),textarea=useRef<HTMLTextAreaElement>(null),composing=useRef(false);
@@ -27,6 +28,7 @@ export default function AiChatPanel({conversationId,onConversation,source,select
   useEffect(()=>{if(selection)setScope('selection');},[selection]);
   useEffect(()=>{if(pinned.current)thread.current?.scrollTo({top:thread.current.scrollHeight,behavior:'instant'});},[last?.text,messages.length,conversationId]);
   useEffect(()=>{pinned.current=true;},[conversationId]);
+  useEffect(()=>{const node=thread.current;if(!node)return;const observer=new ResizeObserver(()=>{if(pinned.current)node.scrollTo({top:node.scrollHeight,behavior:'instant'});});observer.observe(node);return()=>observer.disconnect();},[]);
   const send=async(prompt=draft,action?:'summary'|'formula'|'selection')=>{
     if(busy||preparing||!prompt.trim())return;
     if(!connected){setError('请先连接 ChatGPT 并允许使用套餐额度。');return;}if(!model){setError('请先选择可用模型；如果列表为空，可在账号菜单中刷新。');return;}
@@ -48,7 +50,7 @@ export default function AiChatPanel({conversationId,onConversation,source,select
     }catch(error){setError((error as Error).message);}finally{setPreparing(false);}
   };
   const save=async(message:ChatMessage)=>{if(!conversation)return;setSaving(message.id);setError('');try{const anchor=await onSaveNote(conversation,message);ai.put(await linkAnswerNote(conversation.id,message.id,anchor));ai.changed();}catch(error){setError((error as Error).message);}finally{setSaving(null);}};
-  return <section className="ai-chat-panel" aria-label="文献 AI 对话"><AiAccountControls onModels={setModels}/>
+  return <section className={`ai-chat-panel ${compact?'ai-chat-compact':''}`} aria-label="文献 AI 对话"><AiAccountControls onModels={setModels}/>
     <div ref={thread} className="ai-thread" aria-label="对话消息" onScroll={()=>{const element=thread.current;if(element){pinned.current=element.scrollHeight-element.scrollTop-element.clientHeight<100;setShowLatest(!pinned.current);}}}>
       {loading&&!conversation?<div className="ai-loading"><LoaderCircle size={18} className="spin"/>正在读取本地对话…</div>:!messages.length?<div className="ai-conversation-empty"><span className="ai-empty-icon"><Sparkles size={23}/></span><h3>{source?'和这篇文献聊一聊':'继续你的研究思考'}</h3><p>{source?'梳理文章脉络，理解推导，留住新的想法。':'选择模型，在下方继续提问。'}</p>{source&&<div className="ai-source-caption"><FileText size={15}/><span>{source.paper.title}</span></div>}<small>对话保存在本机 · 发送的内容联网传给 OpenAI</small></div>:messages.map(message=><article className={`ai-message ${message.role}`} key={message.id}><div className="ai-message-byline">{message.role==='assistant'?<><Sparkles size={13}/><b>阅读助手</b><span>{models.find(model=>model.id===message.model)?.name||message.model}</span></>:<><span className="ai-you-avatar">你</span><b>我的提问</b></>}<time dateTime={message.createdAt}>{new Date(message.createdAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}</time></div>
       {message.contextLabel&&<div className="ai-message-source"><Quote size={11}/>{message.contextLabel.kind==='document'?`全文 · ${message.contextLabel.pages?message.contextLabel.pages+' 页 · ':''}${message.contextLabel.characters.toLocaleString()} 字符`:message.contextLabel.kind==='selection'?`选中文字${message.contextLabel.page?' · 第 '+message.contextLabel.page+' 页':''}`:message.contextLabel.kind==='page'?`第 ${message.contextLabel.page} 页截图`:'图片内容'}</div>}
@@ -60,8 +62,8 @@ export default function AiChatPanel({conversationId,onConversation,source,select
     {(error||(conversationId&&ai.errors[conversationId]))&&<div className="ai-panel-error" role="alert">{error||(conversationId&&ai.errors[conversationId])}<button className="icon-button" title="关闭提示" aria-label="关闭 AI 提示" onClick={()=>{setError('');if(conversationId)ai.clearError(conversationId);}}><X size={12}/></button></div>}
     <div className="ai-composer-area">{showLatest&&<button type="button" className="ai-jump-latest" onClick={()=>{pinned.current=true;thread.current?.scrollTo({top:thread.current.scrollHeight,behavior:'instant'});setShowLatest(false);}}><ArrowDown size={14} aria-hidden="true"/>回到最新</button>}{source&&<div className="ai-quick-actions"><button disabled={busy||preparing} onClick={()=>void send(getAssetKind(source.paper)==='image'?'请分析这张图片，概述主要信息，并指出值得进一步关注的细节。':'请通读这篇文献，按研究问题、方法、主要结果、局限性和可借鉴之处进行总结，并标注相关页码。','summary')}><FileText size={13}/>{getAssetKind(source.paper)==='image'?'解读图片':'全文总结'}</button><button disabled={busy||preparing} onClick={()=>void send('请解释资料中的公式，说明每个符号、成立条件、推导过程与直观含义。','formula')}><Sigma size={14}/>解释公式</button>{selection&&<button disabled={busy||preparing} onClick={()=>void send('请解释选中段落的含义、在文章中的作用，以及理解它所需的背景知识。','selection')}><Quote size={13}/>解释选区</button>}</div>}
       {selection&&<div className="ai-selection-chip"><Quote size={13}/><span>{selection.text}</span><button className="icon-button" title="清除选区" aria-label="清除引用选区" onClick={()=>{onClearSelection?.();setScope(conversation?'saved':'document');}}><X size={12}/></button></div>}
-      <form className="ai-composer" onSubmit={event=>{event.preventDefault();void send();}}><label className="ai-composer-label">向文献提问<textarea ref={textarea} aria-label="向文献 AI 提问" placeholder={connected?'写下问题，或粘贴需要解释的段落…':'连接 ChatGPT 后开始提问…'} value={draft} maxLength={20000} rows={2} onChange={event=>setDraft(event.target.value)} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;}} onKeyDown={event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.nativeEvent.isComposing&&!composing.current){event.preventDefault();void send();}}}/></label>
-        <div className="ai-composer-options"><div>
+      <form className="ai-composer" onSubmit={event=>{event.preventDefault();void send();}}><label className="ai-composer-label">向文献提问<textarea ref={textarea} aria-label="向文献 AI 提问" placeholder={connected?'写下问题，或粘贴需要解释的段落…':'连接 ChatGPT 后开始提问…'} value={draft} maxLength={20000} rows={compact?1:2} onChange={event=>setDraft(event.target.value)} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;}} onKeyDown={event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.nativeEvent.isComposing&&!composing.current){event.preventDefault();void send();}}}/></label>
+        <div className="ai-composer-options">{compact&&<button type="button" className="ai-options-trigger" aria-label="模型与推理设置" aria-expanded={options} title="模型、推理强度与文献范围" onClick={()=>setOptions(v=>!v)}><SlidersHorizontal size={13}/><span>{modelInfo?.name||'模型'}{effort?` · ${effortLabel(effort)}`:''}</span></button>}<div className="ai-model-options" hidden={compact&&!options}>
           <select aria-label="AI 模型" value={model} onChange={event=>ai.setPreference(event.target.value)} disabled={!models.length||busy||preparing}>{!models.length&&<option value="">{connected?'等待可用模型':'未连接模型'}</option>}{models.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select>
           {!!efforts.length&&<label className="ai-effort-control">推理<select aria-label="推理强度" title="更高的推理强度通常需要更长时间。可选档位由当前模型提供。" value={effort} disabled={busy||preparing} onChange={event=>ai.setPreference(model,event.target.value)}><option value="">模型默认{modelInfo?.defaultReasoningEffort?` · ${effortLabel(modelInfo.defaultReasoningEffort)}`:''}</option>{efforts.map(option=><option key={option.reasoningEffort} value={option.reasoningEffort} title={option.description}>{effortLabel(option.reasoningEffort)}</option>)}</select></label>}
           {source&&<select aria-label="发送的文献范围" value={scope} disabled={busy||preparing} onChange={event=>setScope(event.target.value as typeof scope)}>{conversation&&<option value="saved">沿用对话上下文</option>}<option value="document">{getAssetKind(source.paper)==='image'?'当前图片':'整篇文献'}</option>{selection&&<option value="selection">选中文字</option>}</select>}

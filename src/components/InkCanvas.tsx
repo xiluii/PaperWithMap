@@ -2,15 +2,17 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import type { InkPoint, InkStroke } from '../types';
 import { drawStroke, inkBounds, pressureValue, strokeBounds, strokeHit, toInkPoint } from '../ink-model';
 import { uid } from '../model';
+import { shapeStrokePoints } from '../ink-shapes';
+import type { InkShape } from '../ink-shapes';
 
-export type InkTool = 'pen' | 'highlighter' | 'eraser' | 'hand';
+export type InkTool = 'pen' | 'highlighter' | 'eraser' | 'hand' | InkShape;
 export type InkCanvasHandle = { zoomBy: (factor:number)=>void; fit:()=>void; reset:()=>void; finish:()=>void };
 type Props = {
   strokes: InkStroke[]; tool: InkTool; color: string; width: number; pressure: boolean; penOnly: boolean;
   onChange: (strokes:InkStroke[])=>void; onZoom:(zoom:number)=>void; onInput:(type:string,pressure:number)=>void;
   fixedViewport?: {x:number;y:number;zoom:number}; ariaLabel?:string;
 };
-type Gesture = {id:number;kind:'draw';stroke:InkStroke}|{id:number;kind:'erase';removed:Set<string>;last:InkPoint}|{id:number;kind:'pan';x:number;y:number;startX:number;startY:number};
+type Gesture = {id:number;kind:'draw';stroke:InkStroke}|{id:number;kind:'shape';shape:InkShape;start:InkPoint;stroke:InkStroke}|{id:number;kind:'erase';removed:Set<string>;last:InkPoint}|{id:number;kind:'pan';x:number;y:number;startX:number;startY:number};
 
 const InkCanvas=forwardRef<InkCanvasHandle,Props>(function InkCanvas(props,ref){
   const surface=useRef<HTMLDivElement>(null),base=useRef<HTMLCanvasElement>(null),live=useRef<HTMLCanvasElement>(null);
@@ -25,11 +27,11 @@ const InkCanvas=forwardRef<InkCanvasHandle,Props>(function InkCanvas(props,ref){
   const clear=(canvas:HTMLCanvasElement|null)=>{const context=canvas?.getContext('2d');if(canvas&&context){context.setTransform(1,0,0,1,0,0);context.clearRect(0,0,canvas.width,canvas.height);}return context;};
   const transform=(context:CanvasRenderingContext2D)=>{const v=viewport.current,dpr=size.current.ratio;context.setTransform(v.zoom*dpr,0,0,v.zoom*dpr,v.x*dpr,v.y*dpr);};
   const renderBase=()=>{const context=clear(base.current);if(!context)return;transform(context);const current=gesture.current;for(const stroke of strokes.current)if(current?.kind!=='erase'||!current.removed.has(stroke.id))drawStroke(context,stroke);};
-  const renderLive=()=>{const context=clear(live.current);if(!context)return;transform(context);const current=gesture.current;if(current?.kind==='draw')drawStroke(context,current.stroke,false);};
+  const renderLive=()=>{const context=clear(live.current);if(!context)return;transform(context);const current=gesture.current;if(current?.kind==='draw'||current?.kind==='shape')drawStroke(context,current.stroke,current.kind==='shape');};
   const requestRender=(background=false)=>{if(frame.current)cancelAnimationFrame(frame.current);frame.current=requestAnimationFrame(()=>{frame.current=0;if(background)renderBase();renderLive();});};
   const finish=()=>{
     const current=gesture.current;if(!current)return;gesture.current=null;
-    if(current.kind==='draw'){
+    if(current.kind==='draw'||current.kind==='shape'){
       const next=[...strokes.current,current.stroke];strokes.current=next;const context=base.current?.getContext('2d');if(context){context.save();transform(context);drawStroke(context,current.stroke);context.restore();}clear(live.current);runtime.current.onChange(next);
     }else if(current.kind==='erase'){
       const next=strokes.current.filter(stroke=>!current.removed.has(stroke.id));const changed=next.length!==strokes.current.length;strokes.current=next;renderBase();if(changed)runtime.current.onChange(next);
@@ -46,7 +48,7 @@ const InkCanvas=forwardRef<InkCanvasHandle,Props>(function InkCanvas(props,ref){
   useEffect(()=>{
     const target=surface.current;if(!target)return;
     let first=true;
-    const resize=()=>{const rect=target.getBoundingClientRect();const ratio=Math.min(window.devicePixelRatio||1,2);size.current={width:rect.width,height:rect.height,ratio};for(const canvas of [base.current,live.current])if(canvas){canvas.width=Math.round(rect.width*ratio);canvas.height=Math.round(rect.height*ratio);}if(runtime.current.fixedViewport)viewport.current=runtime.current.fixedViewport;else if(first){if(strokes.current.length)fit();else viewport.current={x:0,y:0,zoom:1};}first=false;renderBase();renderLive();};
+    const resize=()=>{const rect=target.getBoundingClientRect();if(!rect.width||!rect.height)return;const ratio=Math.min(window.devicePixelRatio||1,2);size.current={width:rect.width,height:rect.height,ratio};for(const canvas of [base.current,live.current])if(canvas){canvas.width=Math.round(rect.width*ratio);canvas.height=Math.round(rect.height*ratio);}if(runtime.current.fixedViewport)viewport.current=runtime.current.fixedViewport;else if(first){if(strokes.current.length)fit();else viewport.current={x:0,y:0,zoom:1};}first=false;renderBase();renderLive();};
     const observer=new ResizeObserver(resize);observer.observe(target);resize();
     const point=(event:PointerEvent)=>{const rect=target.getBoundingClientRect();return toInkPoint(event.clientX-rect.left,event.clientY-rect.top,pressureValue(event.pressure,event.pointerType),viewport.current);};
     const eraseAt=(p:InkPoint,current:Extract<Gesture,{kind:'erase'}>)=>{const radius=16/viewport.current.zoom;const count=Math.max(1,Math.ceil(Math.hypot(p.x-current.last.x,p.y-current.last.y)/(radius*.75)));for(let i=1;i<=Math.min(count,160);i++){const t=i/Math.min(count,160),sample={x:current.last.x+(p.x-current.last.x)*t,y:current.last.y+(p.y-current.last.y)*t,pressure:.5};for(const stroke of strokes.current){let bounds=boundsCache.current.get(stroke.id);if(!bounds){bounds=strokeBounds(stroke);boundsCache.current.set(stroke.id,bounds);}if(!current.removed.has(stroke.id)&&strokeHit(stroke,sample,radius,bounds))current.removed.add(stroke.id);}}current.last=p;};
@@ -62,6 +64,7 @@ const InkCanvas=forwardRef<InkCanvasHandle,Props>(function InkCanvas(props,ref){
       runtime.current.onInput(event.pointerType,pressureValue(event.pressure,event.pointerType));
       const p=point(event);
       if(settings.tool==='eraser'||event.button===5||(event.buttons&32)!==0){const current:Extract<Gesture,{kind:'erase'}>={id:event.pointerId,kind:'erase',removed:new Set(),last:p};gesture.current=current;eraseAt(p,current);requestRender(true);}
+      else if(settings.tool==='rectangle'||settings.tool==='arrow'){gesture.current={id:event.pointerId,kind:'shape',shape:settings.tool,start:p,stroke:{id:uid(),points:shapeStrokePoints(settings.tool,p,p),color:settings.color,width:settings.width,tool:'pen',pressure:false,simulatePressure:false}};requestRender();}
       else{gesture.current={id:event.pointerId,kind:'draw',stroke:{id:uid(),points:[p],color:settings.color,width:settings.tool==='highlighter'?settings.width*5:settings.width,tool:settings.tool==='highlighter'?'highlighter':'pen',pressure:settings.pressure,simulatePressure:event.pointerType!=='pen'}};requestRender();}
       target.classList.add('ink-is-drawing');
     };
@@ -69,11 +72,12 @@ const InkCanvas=forwardRef<InkCanvasHandle,Props>(function InkCanvas(props,ref){
       const current=gesture.current;if(!current||current.id!==event.pointerId)return;event.preventDefault();
       if(event.pointerType==='pen')lastPen.current=performance.now();
       if(current.kind==='pan'){viewport.current={...viewport.current,x:current.startX+event.clientX-current.x,y:current.startY+event.clientY-current.y};requestRender(true);return;}
+      if(current.kind==='shape'){current.stroke.points=shapeStrokePoints(current.shape,current.start,point(event));requestRender();return;}
       const coalesced=event.getCoalescedEvents?.()||[];const samples=coalesced.length?coalesced:[event];
       for(const sample of samples){const p=point(sample);if(current.kind==='erase')eraseAt(p,current);else{const previous=current.stroke.points[current.stroke.points.length-1];if(Math.hypot(p.x-previous.x,p.y-previous.y)>.025||Math.abs(p.pressure-previous.pressure)>.01)current.stroke.points.push(p);}}
       requestRender(current.kind==='erase');
     };
-    const up=(event:PointerEvent)=>{if(gesture.current?.id!==event.pointerId)return;if(event.type==='pointerup'&&gesture.current.kind==='draw')gesture.current.stroke.points.push(point(event));finish();if(target.hasPointerCapture(event.pointerId))target.releasePointerCapture(event.pointerId);};
+    const up=(event:PointerEvent)=>{if(gesture.current?.id!==event.pointerId)return;if(event.type==='pointerup'){if(gesture.current.kind==='draw')gesture.current.stroke.points.push(point(event));else if(gesture.current.kind==='shape')gesture.current.stroke.points=shapeStrokePoints(gesture.current.shape,gesture.current.start,point(event));}finish();if(target.hasPointerCapture(event.pointerId))target.releasePointerCapture(event.pointerId);};
     const wheel=(event:WheelEvent)=>{if(runtime.current.fixedViewport)return;event.preventDefault();if(gesture.current)return;if(event.ctrlKey||event.metaKey){const rect=target.getBoundingClientRect();zoomAt(Math.exp(-event.deltaY*.005),event.clientX-rect.left,event.clientY-rect.top);}else{viewport.current={...viewport.current,x:viewport.current.x-event.deltaX,y:viewport.current.y-event.deltaY};requestRender(true);}};
     const keyDown=(event:KeyboardEvent)=>{if(event.code==='Space'&&target.contains(document.activeElement)){event.preventDefault();spaceHeld.current=true;target.classList.add('ink-space-held');}};
     const keyUp=(event:KeyboardEvent)=>{if(event.code==='Space'){spaceHeld.current=false;target.classList.remove('ink-space-held');}};

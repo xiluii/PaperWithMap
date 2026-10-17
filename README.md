@@ -38,6 +38,8 @@ Paperly 是面向桌面研究场景的本地文献工作台。把论文放上无
 
 论文卡片与文字节点共享拖拽、缩放和连接能力。卡片上的作者、关键词、预览图、年份与阅读状态都可按白板或单卡设置；时间轴让文献回到研究发展的顺序，知识图谱呈现手动建立的关系。
 
+阅读工作区支持论文居左、白板与 AI 上下排列，也可三栏并排或独立分页；横向与纵向分隔线可调大小。白板支持矩形与箭头，浮动工具栏可收起、拖动并记住位置。沉浸阅读保留阅读、批注与缩放工具。
+
 浅色、暗色、跟随系统三种外观覆盖主要页面。白板、阅读器和笔记页均可进入专注模式，把更多空间留给内容。
 
 光标随选词、拖动、连线、缩放及书写工具变化；右键菜单覆盖画布、卡片、连线、文献库、阅读、图片、笔记与对话历史，常用操作就近完成。支持键盘导航与快捷键，Word 和文本输入保留编辑菜单。
@@ -178,7 +180,7 @@ data/
 - [暗色模式验收](docs/dark-mode-acceptance.md) · [工作台设计规范](docs/design-system.md)。
 - [源码发布与隐私](docs/publication.md) · [第三方组件声明](THIRD_PARTY_NOTICES.md)。
 
-当前验收记录：**95 项测试通过**，包含文件持久化、PDF 墨迹、DOCX 修订、真实 Office 转换和 AI 流式协议；TypeScript 与 Vite 构建通过。复验命令为 `npm test` 与 `npm run build`；独立阅读分页与可移动侧栏见[布局验收](docs/panel-layout-acceptance.md)，光标与右键菜单见[交互验收](docs/interaction-acceptance.md)，划词翻译见[词典验收](docs/reading-translation-acceptance.md)。缺少本地转换器时，Office 用例会明确跳过。
+当前验收记录：**99 项测试通过**，包含文件持久化、PDF 墨迹、DOCX 修订、真实 Office 转换和 AI 流式协议；TypeScript 与 Vite 构建通过。复验命令为 `npm test` 与 `npm run build`；独立阅读分页与可移动侧栏见[布局验收](docs/panel-layout-acceptance.md)，光标与右键菜单见[交互验收](docs/interaction-acceptance.md)，划词翻译见[词典验收](docs/reading-translation-acceptance.md)。缺少本地转换器时，Office 用例会明确跳过。
 
 ## 当前阶段
 

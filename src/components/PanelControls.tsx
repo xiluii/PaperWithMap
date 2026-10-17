@@ -21,8 +21,8 @@ export function usePanelWidth(key: string, initial: number) {
   return useLayoutPreference(key + '-width', initial, (value): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 64 && value <= 1000);
 }
 
-export function PanelResizeHandle({ label, value, min, max, onChange, direction = 1, reset = value, className = '' }: {
-  label: string; value: number; min: number; max: number; onChange: (value: number) => void; direction?: number; reset?: number; className?: string;
+export function PanelResizeHandle({ label, value, min, max, onChange, direction = 1, reset = value, className = '', axis = 'x' }: {
+  label: string; value: number; min: number; max: number; onChange: (value: number) => void; direction?: number; reset?: number; className?: string; axis?: 'x' | 'y';
 }) {
   const drag = useRef<{ id: number; x: number; value: number } | null>(null), frame = useRef(0), pending = useRef<number | null>(null);
   const change = useRef(onChange); change.current = onChange;
@@ -35,33 +35,33 @@ export function PanelResizeHandle({ label, value, min, max, onChange, direction 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
   useEffect(() => () => cancelAnimationFrame(frame.current), []);
-  return <div className={`panel-resize-handle ${resizing ? 'is-resizing' : ''} ${className}`} role="separator" tabIndex={0}
-    aria-label={label} aria-orientation="vertical" aria-valuemin={Math.round(min)} aria-valuemax={Math.round(Math.max(min, max))} aria-valuenow={Math.round(clamp(value))}
-    title="拖动调整宽度 · 方向键微调 · 双击还原" onDoubleClick={() => onChange(clamp(reset))}
+  return <div className={`panel-resize-handle ${axis === 'y' ? 'panel-resize-horizontal' : ''} ${resizing ? 'is-resizing' : ''} ${className}`} role="separator" tabIndex={0}
+    aria-label={label} aria-orientation={axis === 'x' ? 'vertical' : 'horizontal'} aria-valuemin={Math.round(min)} aria-valuemax={Math.round(Math.max(min, max))} aria-valuenow={Math.round(clamp(value))}
+    title="拖动调整大小 · 方向键微调 · 双击还原" onDoubleClick={() => onChange(clamp(reset))}
     onKeyDown={event => {
-      const next = event.key === 'ArrowLeft' ? value - 16 * direction : event.key === 'ArrowRight' ? value + 16 * direction : event.key === 'Home' ? min : event.key === 'End' ? max : event.key === 'Enter' ? reset : null;
+      const next = event.key === (axis === 'x' ? 'ArrowLeft' : 'ArrowUp') ? value - 16 * direction : event.key === (axis === 'x' ? 'ArrowRight' : 'ArrowDown') ? value + 16 * direction : event.key === 'Home' ? min : event.key === 'End' ? max : event.key === 'Enter' ? reset : null;
       if (next === null) return; event.preventDefault(); event.stopPropagation(); onChange(clamp(next));
     }} onPointerDown={event => {
       if (event.button !== 0) return; event.preventDefault(); event.stopPropagation(); event.currentTarget.focus({ preventScroll: true }); event.currentTarget.setPointerCapture(event.pointerId);
-      drag.current = { id: event.pointerId, x: event.clientX, value }; setResizing(true);
+      drag.current = { id: event.pointerId, x: axis === 'x' ? event.clientX : event.clientY, value }; setResizing(true);
     }} onPointerMove={event => {
       const start = drag.current; if (start?.id !== event.pointerId) return;
-      pending.current = clamp(start.value + (event.clientX - start.x) * direction);
+      pending.current = clamp(start.value + ((axis === 'x' ? event.clientX : event.clientY) - start.x) * direction);
       if (!frame.current) frame.current = requestAnimationFrame(flush);
     }} onPointerUp={finish} onPointerCancel={finish} onLostPointerCapture={finish}><span><GripVertical size={14}/></span></div>;
 }
 
-export function PanelPositionHandle({ label, onDrop, onStep }: { label: string; onDrop: (x: number) => void; onStep: (direction: DockSide) => void }) {
-  const drag = useRef<{ id: number; x: number } | null>(null), [moving, setMoving] = useState(false);
+export function PanelPositionHandle({ label, onDrop, onStep }: { label: string; onDrop: (x: number, y: number) => void; onStep: (direction: DockSide) => void }) {
+  const drag = useRef<{ id: number; x: number; y: number } | null>(null), [moving, setMoving] = useState(false);
   const finish = (event: ReactPointerEvent<HTMLButtonElement>, cancelled = false) => {
     const start = drag.current; if (start?.id !== event.pointerId) return;
     drag.current = null; setMoving(false);
-    if (!cancelled && Math.abs(event.clientX - start.x) > 24) onDrop(event.clientX);
+    if (!cancelled && (Math.abs(event.clientX - start.x) > 24 || Math.abs(event.clientY - start.y) > 24)) onDrop(event.clientX, event.clientY);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
   return <button type="button" className={`panel-position-handle ${moving ? 'is-moving' : ''}`} aria-label={label}
     title="拖动移动面板 · 左右方向键调整位置" onKeyDown={event => { if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return; event.preventDefault(); event.stopPropagation(); onStep(event.key === 'ArrowLeft' ? 'left' : 'right'); }}
-    onPointerDown={event => { if (event.button !== 0) return; event.preventDefault(); event.stopPropagation(); event.currentTarget.setPointerCapture(event.pointerId); drag.current = { id: event.pointerId, x: event.clientX }; setMoving(true); }}
+    onPointerDown={event => { if (event.button !== 0) return; event.preventDefault(); event.stopPropagation(); event.currentTarget.setPointerCapture(event.pointerId); drag.current = { id: event.pointerId, x: event.clientX, y: event.clientY }; setMoving(true); }}
     onPointerUp={event => finish(event)} onPointerCancel={event => finish(event, true)} onLostPointerCapture={event => finish(event, true)}><GripHorizontal size={15}/></button>;
 }
 
