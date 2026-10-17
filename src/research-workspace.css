@@ -82,6 +82,11 @@
 .reading-ai-pane .ai-conversation-empty { padding:12px; gap:8px; }
 .reading-ai-pane .ai-conversation-empty .ai-empty-icon,.reading-ai-pane .ai-conversation-empty>p,.reading-ai-pane .ai-source-caption { display:none; }
 .reading-ai-pane .ai-conversation-empty>h3 { font-size:14px; }
+.ai-evidence-status { color:var(--muted); font-size:11px; line-height:1.5; margin:4px 2px 6px; }
+.ai-selection-chip>img { width:64px; height:40px; object-fit:contain; background:#fff; border:1px solid var(--border); border-radius:4px; flex-shrink:0; }
+.pdf-region-selector { position:absolute; inset:0; z-index:8; touch-action:none; cursor:crosshair; user-select:none; }
+.pdf-region-hint { position:absolute; top:10px; left:50%; transform:translateX(-50%); padding:6px 10px; border-radius:6px; background:var(--paper); color:var(--green-dark); border:1px solid var(--border); font-size:11px; white-space:nowrap; pointer-events:none; }
+.pdf-region-box { position:absolute; background:#187e8b20; border:2px solid var(--green); pointer-events:none; }
 
 /* Immersive mode keeps the actual PDF editing and zoom controls accessible. */
 .modal.research-reader.reader-focused { inset:0; max-width:none; height:100dvh; max-height:none; border-radius:0; }

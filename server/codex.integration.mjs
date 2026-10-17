@@ -57,6 +57,22 @@ test('API-key-only Codex authentication cannot silently use paid API access', as
   assert.ok(!(await calls()).some(item => item.method === 'turn/start'));
 });
 
+test('later-page selected pixels and full-document tail pages reach Codex with their own provenance', async t => {
+  const {create,send,calls,request}=await setup(t),conversation=await create();
+  const first='data:image/png;base64,AAAA',third='data:image/png;base64,BBBB';
+  await (await send(conversation.id,'分析第一页',{kind:'page',text:'PAGE_1_ONLY',page:1,image:first})).text();
+  await (await send(conversation.id,'解释选中区域',{kind:'selection',text:'PAGE_3_ONLY E_3 = x + 3',page:3,image:third})).text();
+  const turn=(await calls()).filter(item=>item.method==='turn/start').at(-1),text=turn.params.input.find(item=>item.type==='text').text;
+  const history=JSON.parse(text.split('<local_conversation>\n')[1].split('\n</local_conversation>')[0]);
+  assert.match(history.at(-1).content,/page="3"/);assert.match(history.at(-1).content,/PAGE_3_ONLY/);assert.match(history.at(-1).content,/附件图像 2/);
+  assert.deepEqual(turn.params.input.filter(item=>item.type==='image').map(item=>item.url),[first,third]);
+  const saved=await (await request(`/conversations/${conversation.id}`)).json();assert.equal(saved.messages.at(-2).contextLabel.page,3);assert.equal(saved.messages.at(-2).context.hasImage,true);
+  const whole=Array.from({length:4},(_,i)=>`[第 ${i+1} 页]\nUNIQUE_PAGE_${i+1}`).join('\n\n');
+  await (await send(conversation.id,'全文总结',{kind:'document',text:whole,pages:4})).text();
+  const last=(await calls()).filter(item=>item.method==='turn/start').at(-1).params.input.find(item=>item.type==='text').text;
+  for(let page=1;page<=4;page++)assert.match(last,new RegExp('UNIQUE_PAGE_'+page));
+});
+
 test('stopping a Codex answer interrupts its turn and preserves only its partial local answer', async t => {
   const { ai, request, create, send, calls } = await setup(t), conversation = await create();
   const response = await send(conversation.id, '[pause]');

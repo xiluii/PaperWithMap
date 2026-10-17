@@ -55,7 +55,7 @@ export function ReadingTranslationProvider({ children }: { children: ReactNode }
       const target = event.target instanceof Element ? event.target : null;
       if (target?.closest('.reading-translation-popover,.reading-translation-toggle')) return;
       if (target?.closest('.word-editor-mount')) return; // SuperDoc owns its selection; use its read-only selection API.
-      if (!target?.closest('.paper-pdf-pane') || target.closest('button,input,textarea,select,.pdf-ink-overlay,.pdf-place-layer')) { dismiss(); return; }
+      if (!target?.closest('.paper-pdf-pane') || target.closest('button,input,textarea,select,.pdf-ink-overlay,.pdf-place-layer,.pdf-region-selector')) { dismiss(); return; }
       if (event instanceof KeyboardEvent && !['Shift', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'a', 'A'].includes(event.key)) return;
       const selected = window.getSelection();
       if (!selected || selected.isCollapsed || !selected.rangeCount) { dismiss(); return; }
